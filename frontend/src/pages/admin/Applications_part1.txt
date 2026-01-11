@@ -1,0 +1,110 @@
+﻿import React, { useState } from 'react'
+import * as api from '../../lib/mockApi.js'
+import { useAuth } from '../../context/AuthContext.jsx'
+
+export default function Applications() {
+  const { user } = useAuth()
+  const hallId = user?.hallId ?? null
+  const forms = api.listForms({ hallId })
+  const [selectedFormId, setSelectedFormId] = useState(null)
+  const [sortBy, setSortBy] = useState('score')
+  const [filterStatus, setFilterStatus] = useState('all')
+  const [filterSession, setFilterSession] = useState('all')
+  const [filterDepartment, setFilterDepartment] = useState('all')
+  const [selectedAppId, setSelectedAppId] = useState(null)
+  
+  const allApps = api.listApplications({ hallId })
+  const appsWithScores = allApps.map(app => ({
+    ...app,
+    score: api.calculateApplicationScore(app)
+  }))
+  
+  let apps = selectedFormId 
+    ? appsWithScores.filter(app => app.formId === selectedFormId)
+    : appsWithScores
+    
+  if (filterStatus !== 'all') {
+    apps = apps.filter(app => app.status === filterStatus)
+  }
+  
+  const sessions = [...new Set(apps.map(app => app.data?.session).filter(Boolean))].sort()
+  const departments = [...new Set(apps.map(app => app.data?.department).filter(Boolean))].sort()
+  
+  if (filterSession !== 'all') {
+    apps = apps.filter(app => app.data?.session === filterSession)
+  }
+  if (filterDepartment !== 'all') {
+    apps = apps.filter(app => app.data?.department === filterDepartment)
+  }
+  
+  if (sortBy === 'score') {
+    apps.sort((a, b) => b.score - a.score)
+  } else if (sortBy === 'session') {
+    apps.sort((a, b) => (a.data?.session || '').localeCompare(b.data?.session || ''))
+  } else if (sortBy === 'department') {
+    apps.sort((a, b) => (a.data?.department || '').localeCompare(b.data?.department || ''))
+  } else {
+    apps.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Applications Management</h1>
+        <p className="text-gray-600">Review and manage all applications in one place</p>
+      </div>
+
+      <div className="bg-white border-2 border-gray-300 rounded-lg p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="border-2 rounded-lg px-3 py-2">
+            <option value="score">Sort: Score (High to Low)</option>
+            <option value="date">Sort: Date (Newest First)</option>
+            <option value="session">Sort: Session</option>
+            <option value="department">Sort: Department</option>
+          </select>
+          
+          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="border-2 rounded-lg px-3 py-2">
+            <option value="all">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Interview Scheduled">Interview Scheduled</option>
+            <option value="Interview Passed">Interview Passed</option>
+            <option value="Interview Failed">Interview Failed</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+          
+          <select value={filterSession} onChange={(e) => setFilterSession(e.target.value)} className="border-2 rounded-lg px-3 py-2">
+            <option value="all">All Sessions</option>
+            {sessions.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          
+          <select value={filterDepartment} onChange={(e) => setFilterDepartment(e.target.value)} className="border-2 rounded-lg px-3 py-2">
+            <option value="all">All Departments</option>
+            {departments.map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-lg font-semibold mb-4">Applications ({apps.length})</h2>
+        {apps.length === 0 ? (
+          <div className="bg-gray-50 rounded-lg p-8 text-center text-gray-600">
+            No applications found.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {apps.map(app => (
+              <ApplicationCard
+                key={app.id}
+                app={app}
+                hallId={hallId}
+                isExpanded={selectedAppId === app.id}
+                onToggle={() => setSelectedAppId(selectedAppId === app.id ? null : app.id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

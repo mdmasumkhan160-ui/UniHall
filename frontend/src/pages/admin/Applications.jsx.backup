@@ -1,0 +1,1421 @@
+import React, { useState } from 'react'import React, { useState } from 'react'import React, { useState } from 'react'
+
+import * as api from '../../lib/mockApi.js'
+
+import { useAuth } from '../../context/AuthContext.jsx'import * as api from '../../lib/mockApi.js'import * as api from '../../lib/mockApi.js'
+
+
+
+export default function Applications() {import { useAuth } from '../../context/AuthContext.jsx'import { useAuth } from '../../context/AuthContext.jsx'
+
+  const { user } = useAuth()
+
+  const hallId = user?.hallId ?? null
+
+  const forms = api.listForms({ hallId })
+
+  const [selectedFormId, setSelectedFormId] = useState(null)export default function Applications() {export default function Applications() {
+
+  const [sortBy, setSortBy] = useState('score')
+
+  const [filterStatus, setFilterStatus] = useState('all')  const { user } = useAuth()  const { user } = useAuth()
+
+  const [filterSession, setFilterSession] = useState('all')
+
+  const [filterDepartment, setFilterDepartment] = useState('all')  const hallId = user?.hallId ?? null  const hallId = user?.hallId ?? null
+
+  const [selectedAppId, setSelectedAppId] = useState(null)
+
+    const forms = api.listForms({ hallId })  const forms = api.listForms({ hallId })
+
+  const allApps = api.listApplications({ hallId })
+
+    const [selectedFormId, setSelectedFormId] = useState(null)  const [selectedFormId, setSelectedFormId] = useState(null)
+
+  const appsWithScores = allApps.map(app => ({
+
+    ...app,  const [sortBy, setSortBy] = useState('score') // score, date, session, department  const [sortBy, setSortBy] = useState('date') // date, score, session
+
+    score: api.calculateApplicationScore(app)
+
+  }))  const [filterStatus, setFilterStatus] = useState('all')  const [filterStatus, setFilterStatus] = useState('all')
+
+  
+
+  let apps = selectedFormId   const [filterSession, setFilterSession] = useState('all')  
+
+    ? appsWithScores.filter(app => app.formId === selectedFormId)
+
+    : appsWithScores  const [filterDepartment, setFilterDepartment] = useState('all')  // Get all applications for this hall
+
+    
+
+  if (filterStatus !== 'all') {  const [selectedAppId, setSelectedAppId] = useState(null)  const allApps = api.listApplications({ hallId })
+
+    apps = apps.filter(app => app.status === filterStatus)
+
+  }    
+
+  
+
+  const sessions = [...new Set(apps.map(app => app.data?.session).filter(Boolean))].sort()  // Get all applications for this hall  // Calculate scores for applications
+
+  const departments = [...new Set(apps.map(app => app.data?.department).filter(Boolean))].sort()
+
+    const allApps = api.listApplications({ hallId })  const appsWithScores = allApps.map(app => ({
+
+  if (filterSession !== 'all') {
+
+    apps = apps.filter(app => app.data?.session === filterSession)      ...app,
+
+  }
+
+  if (filterDepartment !== 'all') {  // Calculate scores for applications    score: api.calculateApplicationScore(app)
+
+    apps = apps.filter(app => app.data?.department === filterDepartment)
+
+  }  const appsWithScores = allApps.map(app => ({  }))
+
+  
+
+  if (sortBy === 'score') {    ...app,  
+
+    apps.sort((a, b) => b.score - a.score)
+
+  } else if (sortBy === 'session') {    score: api.calculateApplicationScore(app)  // Filter by selected form and status
+
+    apps.sort((a, b) => {
+
+      const sessionA = a.data?.session || ''  }))  let apps = selectedFormId 
+
+      const sessionB = b.data?.session || ''
+
+      return sessionA.localeCompare(sessionB)      ? appsWithScores.filter(app => app.formId === selectedFormId)
+
+    })
+
+  } else if (sortBy === 'department') {  // Filter by selected form    : appsWithScores
+
+    apps.sort((a, b) => {
+
+      const deptA = a.data?.department || ''  let apps = selectedFormId     
+
+      const deptB = b.data?.department || ''
+
+      return deptA.localeCompare(deptB)    ? appsWithScores.filter(app => app.formId === selectedFormId)  if (filterStatus !== 'all') {
+
+    })
+
+  } else {    : appsWithScores    apps = apps.filter(app => app.status === filterStatus)
+
+    apps.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+
+  }      }
+
+
+
+  const updateStatus = (id, status) => {   // Filter by status  
+
+    api.updateApplicationStatus(id, status)
+
+    window.location.reload()   if (filterStatus !== 'all') {  // Sort applications
+
+  }
+
+      apps = apps.filter(app => app.status === filterStatus)  if (sortBy === 'score') {
+
+  const setPaid = (id, paid) => { 
+
+    api.markPayment(id, paid)  }    apps.sort((a, b) => b.score - a.score)
+
+    window.location.reload() 
+
+  }    } else if (sortBy === 'session') {
+
+
+
+  return (  // Extract unique sessions and departments    apps.sort((a, b) => {
+
+    <div className="space-y-6">
+
+      <div>  const sessions = [...new Set(apps.map(app => app.data?.session).filter(Boolean))].sort()      const sessionA = a.data?.session || ''
+
+        <h1 className="text-2xl font-bold text-gray-900">Student Applications Management</h1>
+
+        <p className="text-gray-600">Review, filter, and manage all submitted applications</p>  const departments = [...new Set(apps.map(app => app.data?.department).filter(Boolean))].sort()      const sessionB = b.data?.session || ''
+
+      </div>
+
+        return sessionA.localeCompare(sessionB)
+
+      <div className="bg-white border-2 border-gray-300 rounded-lg p-4">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">  // Filter by session and department    })
+
+          <div>
+
+            <label className="block text-sm font-medium text-gray-700 mb-2">Sort By:</label>  if (filterSession !== 'all') {  } else {
+
+            <select
+
+              value={sortBy}    apps = apps.filter(app => app.data?.session === filterSession)    apps.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+
+              onChange={(e) => setSortBy(e.target.value)}
+
+              className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none"  }  }
+
+            >
+
+              <option value="score">Score (Highest First) 📊</option>  if (filterDepartment !== 'all') {
+
+              <option value="date">Date (Newest First) 📅</option>
+
+              <option value="session">Session 🎓</option>    apps = apps.filter(app => app.data?.department === filterDepartment)  const updateStatus = (id, status) => { 
+
+              <option value="department">Department 🏛️</option>
+
+            </select>  }    api.updateApplicationStatus(id, status)
+
+          </div>
+
+                window.location.reload() 
+
+          <div>
+
+            <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Status:</label>  // Sort applications  }
+
+            <select
+
+              value={filterStatus}  if (sortBy === 'score') {  
+
+              onChange={(e) => setFilterStatus(e.target.value)}
+
+              className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none"    apps.sort((a, b) => b.score - a.score)  const setPaid = (id, paid) => { 
+
+            >
+
+              <option value="all">All Status</option>  } else if (sortBy === 'session') {    api.markPayment(id, paid)
+
+              <option value="Pending">Pending</option>
+
+              <option value="Interview Scheduled">Interview Scheduled</option>    apps.sort((a, b) => {    window.location.reload() 
+
+              <option value="Interview Passed">Interview Passed</option>
+
+              <option value="Interview Failed">Interview Failed</option>      const sessionA = a.data?.session || ''  }
+
+              <option value="Approved">Approved</option>
+
+              <option value="Rejected">Rejected</option>      const sessionB = b.data?.session || ''
+
+              <option value="Admitted">Admitted</option>
+
+            </select>      return sessionA.localeCompare(sessionB)  return (
+
+          </div>
+
+              })    <div className="space-y-6">
+
+          <div>
+
+            <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Session:</label>  } else if (sortBy === 'department') {      <div>
+
+            <select
+
+              value={filterSession}    apps.sort((a, b) => {        <h1 className="text-2xl font-bold text-gray-900">Student Applications</h1>
+
+              onChange={(e) => setFilterSession(e.target.value)}
+
+              className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none"      const deptA = a.data?.department || ''        <p className="text-gray-600">Review and manage submitted applications</p>
+
+            >
+
+              <option value="all">All Sessions</option>      const deptB = b.data?.department || ''      </div>
+
+              {sessions.map(s => (
+
+                <option key={s} value={s}>{s}</option>      return deptA.localeCompare(deptB)
+
+              ))}
+
+            </select>    })      {/* Filters and Sorting */}
+
+          </div>
+
+            } else {      <div className="bg-white border-2 border-gray-300 rounded-lg p-4">
+
+          <div>
+
+            <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Department:</label>    apps.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+
+            <select
+
+              value={filterDepartment}  }          <div>
+
+              onChange={(e) => setFilterDepartment(e.target.value)}
+
+              className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none"            <label className="block text-sm font-medium text-gray-700 mb-2">Sort By:</label>
+
+            >
+
+              <option value="all">All Departments</option>  const updateStatus = (id, status) => {             <select
+
+              {departments.map(d => (
+
+                <option key={d} value={d}>{d}</option>    api.updateApplicationStatus(id, status)              value={sortBy}
+
+              ))}
+
+            </select>    window.location.reload()               onChange={(e) => setSortBy(e.target.value)}
+
+          </div>
+
+        </div>  }              className="w-full border rounded-lg px-3 py-2"
+
+
+
+        {forms.length > 0 && (              >
+
+          <div className="mt-4 pt-4 border-t">
+
+            <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Form:</label>  const setPaid = (id, paid) => {               <option value="date">Date (Newest First)</option>
+
+            <div className="flex flex-wrap gap-2">
+
+              <button    api.markPayment(id, paid)              <option value="score">Score (Highest First)</option>
+
+                onClick={() => setSelectedFormId(null)}
+
+                className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${    window.location.reload()               <option value="session">Session</option>
+
+                  selectedFormId === null
+
+                    ? 'bg-blue-600 text-white border-blue-600'  }            </select>
+
+                    : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+
+                }`}          </div>
+
+              >
+
+                All Forms  return (          
+
+              </button>
+
+              {forms.map(form => (    <div className="space-y-6">          <div>
+
+                <button
+
+                  key={form.id}      <div>            <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Status:</label>
+
+                  onClick={() => setSelectedFormId(form.id)}
+
+                  className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${        <h1 className="text-2xl font-bold text-gray-900">Student Applications Management</h1>            <select
+
+                    selectedFormId === form.id
+
+                      ? 'bg-blue-600 text-white border-blue-600'        <p className="text-gray-600">Review, filter, and manage all submitted applications</p>              value={filterStatus}
+
+                      : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+
+                  }`}      </div>              onChange={(e) => setFilterStatus(e.target.value)}
+
+                >
+
+                  {form.title || form.name}              className="w-full border rounded-lg px-3 py-2"
+
+                  {form.active && (
+
+                    <span className="ml-2 px-2 py-0.5 bg-green-500 text-white text-xs rounded-full">      {/* Filters and Sorting */}            >
+
+                      Active
+
+                    </span>      <div className="bg-white border-2 border-gray-300 rounded-lg p-4">              <option value="all">All Status</option>
+
+                  )}
+
+                </button>        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">              <option value="Pending">Pending</option>
+
+              ))}
+
+            </div>          <div>              <option value="Interview Scheduled">Interview Scheduled</option>
+
+          </div>
+
+        )}            <label className="block text-sm font-medium text-gray-700 mb-2">Sort By:</label>              <option value="Interview Passed">Interview Passed</option>
+
+      </div>
+
+            <select              <option value="Interview Failed">Interview Failed</option>
+
+      <div>
+
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">              value={sortBy}              <option value="Approved">Approved</option>
+
+          Applications ({apps.length})
+
+        </h2>              onChange={(e) => setSortBy(e.target.value)}              <option value="Rejected">Rejected</option>
+
+        
+
+        {apps.length === 0 ? (              className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none"              <option value="Admitted">Admitted</option>
+
+          <div className="bg-gray-50 rounded-lg p-8 text-center">
+
+            <p className="text-gray-600">            >            </select>
+
+              {selectedFormId 
+
+                ? 'No applications received for this form yet.'              <option value="score">Score (Highest First) 📊</option>          </div>
+
+                : 'No applications received yet.'}
+
+            </p>              <option value="date">Date (Newest First) 📅</option>        </div>
+
+          </div>
+
+        ) : (              <option value="session">Session 🎓</option>
+
+          <div className="space-y-4">
+
+            {apps.map(app => (              <option value="department">Department 🏛️</option>        {/* Form Filter */}
+
+              <ApplicationCard
+
+                key={app.id}            </select>        {forms.length > 0 && (
+
+                app={app}
+
+                hallId={hallId}          </div>          <div>
+
+                isExpanded={selectedAppId === app.id}
+
+                onToggle={() => setSelectedAppId(selectedAppId === app.id ? null : app.id)}                      <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Form:</label>
+
+                onStatusChange={updateStatus}
+
+                onPaymentChange={setPaid}          <div>            <div className="flex flex-wrap gap-2">
+
+              />
+
+            ))}            <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Status:</label>              <button
+
+          </div>
+
+        )}            <select                onClick={() => setSelectedFormId(null)}
+
+      </div>
+
+    </div>              value={filterStatus}                className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
+
+  )
+
+}              onChange={(e) => setFilterStatus(e.target.value)}                  selectedFormId === null
+
+
+
+function ApplicationCard({ app, hallId, isExpanded, onToggle, onStatusChange, onPaymentChange }) {              className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none"                    ? 'bg-blue-600 text-white border-blue-600'
+
+  const [showInterviewModal, setShowInterviewModal] = useState(false)
+
+  const [showSeatModal, setShowSeatModal] = useState(false)            >                    : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+
+  const [interviewDate, setInterviewDate] = useState('')
+
+  const [interviewTime, setInterviewTime] = useState('')              <option value="all">All Status</option>                }`}
+
+  const [interviewVenue, setInterviewVenue] = useState('')
+
+  const [roomNumber, setRoomNumber] = useState('')              <option value="Pending">Pending</option>              >
+
+  const [seatNumber, setSeatNumber] = useState('')
+
+                <option value="Interview Scheduled">Interview Scheduled</option>                All Forms
+
+  const user = api.getUserById(app.userId)
+
+  const form = api.getFormById(app.formId)              <option value="Interview Passed">Interview Passed</option>              </button>
+
+  const score = api.calculateApplicationScore(app)
+
+                <option value="Interview Failed">Interview Failed</option>              {forms.map(form => (
+
+  const existingSeats = api.listSeatAllocations({ hallId, userId: app.userId, status: 'occupied' })
+
+  const hasSeat = existingSeats.length > 0              <option value="Approved">Approved</option>                <button
+
+  
+
+  const waitlistEntries = api.listWaitlist({ hallId }).filter(w => w.userId === app.userId && w.status === 'waiting')              <option value="Rejected">Rejected</option>                  key={form.id}
+
+  const isOnWaitlist = waitlistEntries.length > 0
+
+                <option value="Admitted">Admitted</option>                  onClick={() => setSelectedFormId(form.id)}
+
+  const statusColors = {
+
+    Pending: 'bg-yellow-100 text-yellow-800 border-yellow-300',            </select>                  className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
+
+    'Interview Scheduled': 'bg-purple-100 text-purple-800 border-purple-300',
+
+    'Interview Passed': 'bg-blue-100 text-blue-800 border-blue-300',          </div>                    selectedFormId === form.id
+
+    'Interview Failed': 'bg-red-100 text-red-800 border-red-300',
+
+    Approved: 'bg-green-100 text-green-800 border-green-300',                                ? 'bg-blue-600 text-white border-blue-600'
+
+    Rejected: 'bg-red-100 text-red-800 border-red-300',
+
+    Admitted: 'bg-green-100 text-green-800 border-green-300',          <div>                      : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+
+  }
+
+              <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Session:</label>                  }`}
+
+  const scheduleInterview = () => {
+
+    if (!interviewDate || !interviewTime || !interviewVenue) {            <select                >
+
+      alert('Please fill all interview details')
+
+      return              value={filterSession}                  {form.title || form.name}
+
+    }
+
+                  onChange={(e) => setFilterSession(e.target.value)}                  {form.active && (
+
+    try {
+
+      api.publishInterviewList({              className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none"                    <span className="ml-2 px-2 py-0.5 bg-green-500 text-white text-xs rounded-full">
+
+        hallId,
+
+        selectedApplicationIds: [app.id],            >                      Active
+
+        interviewDate,
+
+        interviewTime: interviewTime,              <option value="all">All Sessions</option>                    </span>
+
+        venue: interviewVenue
+
+      })              {sessions.map(s => (                  )}
+
+      alert('Interview scheduled successfully!')
+
+      setShowInterviewModal(false)                <option key={s} value={s}>{s}</option>                </button>
+
+      window.location.reload()
+
+    } catch (error) {              ))}              ))}
+
+      alert('Error scheduling interview: ' + error.message)
+
+    }            </select>            </div>
+
+  }
+
+            </div>          </div>
+
+  const allocateSeat = () => {
+
+    if (!roomNumber || !seatNumber) {                  )}
+
+      alert('Please enter both room and seat number')
+
+      return          <div>      </div>
+
+    }
+
+                <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Department:</label>
+
+    if (!app.paymentDone) {
+
+      alert('Payment must be completed before seat allocation')            <select      {/* Applications List */}
+
+      return
+
+    }              value={filterDepartment}      <div>
+
+    
+
+    try {              onChange={(e) => setFilterDepartment(e.target.value)}        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+
+      api.allocateSeat({
+
+        userId: app.userId,              className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none"          Applications ({apps.length})
+
+        hallId,
+
+        roomNumber,            >        </h2>
+
+        seatNumber,
+
+        session: app.data?.session || '',              <option value="all">All Departments</option>        
+
+        department: app.data?.department || ''
+
+      })              {departments.map(d => (        {apps.length === 0 ? (
+
+      alert('Seat allocated successfully!')
+
+      setShowSeatModal(false)                <option key={d} value={d}>{d}</option>          <div className="bg-gray-50 rounded-lg p-8 text-center">
+
+      window.location.reload()
+
+    } catch (error) {              ))}            <p className="text-gray-600">
+
+      alert('Error allocating seat: ' + error.message)
+
+    }            </select>              {selectedFormId 
+
+  }
+
+            </div>                ? 'No applications received for this form yet.'
+
+  const addToWaitlist = () => {
+
+    if (isOnWaitlist) {        </div>                : 'No applications received yet.'}
+
+      alert('Student is already on waitlist')
+
+      return            </p>
+
+    }
+
+            {/* Form Filter */}          </div>
+
+    try {
+
+      api.addToWaitlist({        {forms.length > 0 && (        ) : (
+
+        userId: app.userId,
+
+        hallId,          <div className="mt-4 pt-4 border-t">          <div className="space-y-4">
+
+        applicationId: app.id,
+
+        priority: waitlistEntries.length + 1            <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Form:</label>            {apps.map(app => (
+
+      })
+
+      alert('Added to waitlist successfully!')            <div className="flex flex-wrap gap-2">              <ApplicationCard
+
+      window.location.reload()
+
+    } catch (error) {              <button                key={app.id}
+
+      alert('Error adding to waitlist: ' + error.message)
+
+    }                onClick={() => setSelectedFormId(null)}                app={app}
+
+  }
+
+                className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${                onStatusChange={updateStatus}
+
+  return (
+
+    <div className="bg-white border-2 border-gray-300 rounded-lg p-5 hover:shadow-lg transition-shadow">                  selectedFormId === null                onPaymentChange={setPaid}
+
+      <div className="flex items-start justify-between mb-3">
+
+        <div className="flex-1">                    ? 'bg-blue-600 text-white border-blue-600'              />
+
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+
+            <h3 className="text-lg font-semibold text-gray-900">{user?.name || 'Unknown Student'}</h3>                    : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'            ))}
+
+            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColors[app.status] || 'bg-gray-100 text-gray-800 border-gray-300'}`}>
+
+              {app.status}                }`}          </div>
+
+            </span>
+
+            <span className="px-3 py-1 bg-indigo-600 text-white border border-indigo-700 rounded-full text-xs font-bold">              >        )}
+
+              📊 {score} pts
+
+            </span>                All Forms      </div>
+
+            {app.paymentDone && (
+
+              <span className="px-3 py-1 bg-blue-100 text-blue-800 border border-blue-300 rounded-full text-xs font-medium">              </button>    </div>
+
+                💳 Paid
+
+              </span>              {forms.map(form => (  )
+
+            )}
+
+            {hasSeat && (                <button}
+
+              <span className="px-3 py-1 bg-green-100 text-green-800 border border-green-300 rounded-full text-xs font-medium">
+
+                🪑 Seat Assigned                  key={form.id}
+
+              </span>
+
+            )}                  onClick={() => setSelectedFormId(form.id)}function ApplicationCard({ app, onStatusChange, onPaymentChange }) {
+
+            {isOnWaitlist && (
+
+              <span className="px-3 py-1 bg-orange-100 text-orange-800 border border-orange-300 rounded-full text-xs font-medium">                  className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${  const [expanded, setExpanded] = useState(false)
+
+                ⏳ Waitlist
+
+              </span>                    selectedFormId === form.id  const user = api.getUserById(app.userId)
+
+            )}
+
+          </div>                      ? 'bg-blue-600 text-white border-blue-600'  const form = api.getFormById(app.formId)
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-1 text-sm text-gray-600">
+
+            <div>📧 {user?.email || 'N/A'}</div>                      : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'  const score = api.calculateApplicationScore(app)
+
+            <div>🆔 {user?.studentId || 'N/A'}</div>
+
+            <div>🎓 Session: {app.data?.session || 'N/A'}</div>                  }`}  
+
+            <div>🏛️ Department: {app.data?.department || 'N/A'}</div>
+
+            <div className="md:col-span-2">📝 Form: {form?.title || form?.name || 'Unknown'} • 📅 {new Date(app.createdAt).toLocaleString()}</div>                >  const statusColors = {
+
+          </div>
+
+        </div>                  {form.title || form.name}    Pending: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+
+        <button
+
+          onClick={onToggle}                  {form.active && (    'Interview Scheduled': 'bg-purple-100 text-purple-800 border-purple-300',
+
+          className="text-blue-600 hover:text-blue-700 text-sm font-medium ml-4 whitespace-nowrap"
+
+        >                    <span className="ml-2 px-2 py-0.5 bg-green-500 text-white text-xs rounded-full">    'Interview Passed': 'bg-blue-100 text-blue-800 border-blue-300',
+
+          {isExpanded ? '▲ Hide' : '▼ View Full'}
+
+        </button>                      Active    'Interview Failed': 'bg-red-100 text-red-800 border-red-300',
+
+      </div>
+
+                    </span>    Approved: 'bg-green-100 text-green-800 border-green-300',
+
+      {isExpanded && (
+
+        <div className="border-t pt-4 mt-4 space-y-4">                  )}    Rejected: 'bg-red-100 text-red-800 border-red-300',
+
+          <div className="bg-gray-50 rounded-lg p-4">
+
+            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">                </button>    Admitted: 'bg-green-100 text-green-800 border-green-300',
+
+              📋 Complete Application Details
+
+            </h4>              ))}  }
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              {form?.schema?.map(field => {            </div>
+
+                const value = app.data?.[field.id]
+
+                const file = app.attachments?.[field.id]          </div>  return (
+
+                return (
+
+                  <div key={field.id} className="bg-white rounded border p-3">        )}    <div className="bg-white border-2 border-gray-300 rounded-lg p-5">
+
+                    <div className="text-xs font-medium text-gray-500 mb-1">{field.label}</div>
+
+                    <div className="text-sm text-gray-900 font-medium">      </div>      <div className="flex items-start justify-between mb-3">
+
+                      {Array.isArray(value) ? value.join(', ') : (value || '—')}
+
+                    </div>        <div className="flex-1">
+
+                    {field.score > 0 && (
+
+                      <div className="text-xs text-indigo-600 mt-1">Score: {field.score} pts</div>      {/* Applications List */}          <div className="flex items-center gap-2 mb-1 flex-wrap">
+
+                    )}
+
+                    {file && (      <div>            <h3 className="text-lg font-semibold text-gray-900">{user?.name || 'Unknown Student'}</h3>
+
+                      <div className="text-xs text-green-600 mt-2 flex items-center gap-1">
+
+                        📎 {file.name} ({(file.size / 1024).toFixed(1)} KB)        <h2 className="text-lg font-semibold text-gray-900 mb-4">            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColors[app.status] || 'bg-gray-100 text-gray-800 border-gray-300'}`}>
+
+                      </div>
+
+                    )}          Applications ({apps.length})              {app.status}
+
+                  </div>
+
+                )        </h2>            </span>
+
+              })}
+
+            </div>                    {app.paymentDone && (
+
+          </div>
+
+        {apps.length === 0 ? (              <span className="px-3 py-1 bg-blue-100 text-blue-800 border border-blue-300 rounded-full text-xs font-medium">
+
+          <div className="flex flex-wrap gap-3 pt-4 border-t">
+
+            {app.status !== 'Interview Scheduled' && app.status !== 'Interview Passed' && app.status !== 'Interview Failed' && (          <div className="bg-gray-50 rounded-lg p-8 text-center">                💳 Paid
+
+              <button
+
+                onClick={() => setShowInterviewModal(true)}            <p className="text-gray-600">              </span>
+
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium text-sm flex items-center gap-2"
+
+              >              {selectedFormId             )}
+
+                📞 Call for Interview
+
+              </button>                ? 'No applications received for this form yet.'            {app.seatAllocated && (
+
+            )}
+
+                            : 'No applications received yet.'}              <span className="px-3 py-1 bg-green-100 text-green-800 border border-green-300 rounded-full text-xs font-medium">
+
+            {(app.status === 'Interview Scheduled' || app.status === 'Interview Passed') && (
+
+              <button            </p>                🪑 Seat Allocated
+
+                onClick={() => onStatusChange(app.id, 'Approved')}
+
+                disabled={app.status === 'Approved'}          </div>              </span>
+
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium text-sm flex items-center gap-2"
+
+              >        ) : (            )}
+
+                ✅ Mark Selected
+
+              </button>          <div className="space-y-4">            <span className="px-3 py-1 bg-indigo-100 text-indigo-800 border border-indigo-300 rounded-full text-xs font-bold">
+
+            )}
+
+                        {apps.map(app => (              📊 Score: {score}
+
+            {app.status === 'Interview Scheduled' && (
+
+              <button              <ApplicationCard            </span>
+
+                onClick={() => onStatusChange(app.id, 'Interview Failed')}
+
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-sm flex items-center gap-2"                key={app.id}          </div>
+
+              >
+
+                ❌ Not Selected                app={app}          <div className="text-sm text-gray-600">
+
+              </button>
+
+            )}                hallId={hallId}            Form: {form?.title || form?.name || 'Unknown Form'} • Submitted: {new Date(app.createdAt).toLocaleString()}
+
+            
+
+            {(app.status === 'Approved' || app.status === 'Interview Passed') && !hasSeat && (                isExpanded={selectedAppId === app.id}          </div>
+
+              <button
+
+                onClick={() => setShowSeatModal(true)}                onToggle={() => setSelectedAppId(selectedAppId === app.id ? null : app.id)}          <div className="text-sm text-gray-600">
+
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm flex items-center gap-2"
+
+              >                onStatusChange={updateStatus}            Email: {user?.email || 'N/A'} • Student ID: {user?.studentId || 'N/A'}
+
+                🪑 Assign Seat
+
+              </button>                onPaymentChange={setPaid}          </div>
+
+            )}
+
+                          />          <div className="text-sm text-gray-600">
+
+            {!hasSeat && !isOnWaitlist && app.status !== 'Rejected' && app.status !== 'Interview Failed' && (
+
+              <button            ))}            Session: {app.data?.session || 'N/A'} • Department: {app.data?.department || 'N/A'}
+
+                onClick={addToWaitlist}
+
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium text-sm flex items-center gap-2"          </div>          </div>
+
+              >
+
+                ⏳ Add to Waitlist        )}        </div>
+
+              </button>
+
+            )}      </div>        <button
+
+            
+
+            <button    </div>          onClick={() => setExpanded(!expanded)}
+
+              onClick={() => onPaymentChange(app.id, !app.paymentDone)}
+
+              className={`px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 ${  )          className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+
+                app.paymentDone
+
+                  ? 'bg-gray-600 text-white hover:bg-gray-700'}        >
+
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+
+              }`}          {expanded ? 'Hide Details ▲' : 'View Details ▼'}
+
+            >
+
+              {app.paymentDone ? '💳 Mark Unpaid' : '💰 Mark Paid'}function ApplicationCard({ app, hallId, isExpanded, onToggle, onStatusChange, onPaymentChange }) {        </button>
+
+            </button>
+
+              const [showInterviewModal, setShowInterviewModal] = useState(false)      </div>
+
+            {app.status !== 'Rejected' && (
+
+              <button  const [showSeatModal, setShowSeatModal] = useState(false)
+
+                onClick={() => onStatusChange(app.id, 'Rejected')}
+
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-sm flex items-center gap-2"  const [interviewDate, setInterviewDate] = useState('')      {expanded && (
+
+              >
+
+                🚫 Reject  const [interviewTime, setInterviewTime] = useState('')        <div className="border-t pt-4 mt-4 space-y-4">
+
+              </button>
+
+            )}  const [interviewVenue, setInterviewVenue] = useState('')          {/* Application Data */}
+
+          </div>
+
+        </div>  const [roomNumber, setRoomNumber] = useState('')          <div className="bg-gray-50 rounded-lg p-4">
+
+      )}
+
+        const [seatNumber, setSeatNumber] = useState('')            <h4 className="font-medium text-gray-900 mb-3">Submitted Information:</h4>
+
+      {showInterviewModal && (
+
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+
+            <h3 className="text-lg font-bold mb-4">Schedule Interview</h3>  const user = api.getUserById(app.userId)              {Object.entries(app.data || {}).map(([key, value]) => (
+
+            <div className="space-y-3">
+
+              <div>  const form = api.getFormById(app.formId)                <div key={key} className="text-sm">
+
+                <label className="block text-sm font-medium mb-1">Interview Date</label>
+
+                <input  const score = api.calculateApplicationScore(app)                  <span className="font-medium text-gray-700">{key}:</span>{' '}
+
+                  type="date"
+
+                  value={interviewDate}                    <span className="text-gray-900">{value}</span>
+
+                  onChange={(e) => setInterviewDate(e.target.value)}
+
+                  className="w-full border rounded px-3 py-2"  // Check if already has seat                </div>
+
+                />
+
+              </div>  const existingSeats = api.listSeatAllocations({ hallId, userId: app.userId, status: 'occupied' })              ))}
+
+              <div>
+
+                <label className="block text-sm font-medium mb-1">Interview Time</label>  const hasSeat = existingSeats.length > 0            </div>
+
+                <input
+
+                  type="time"            </div>
+
+                  value={interviewTime}
+
+                  onChange={(e) => setInterviewTime(e.target.value)}  // Check if on waitlist
+
+                  className="w-full border rounded px-3 py-2"
+
+                />  const waitlistEntries = api.listWaitlist({ hallId }).filter(w => w.userId === app.userId && w.status === 'waiting')          {/* Actions */}
+
+              </div>
+
+              <div>  const isOnWaitlist = waitlistEntries.length > 0          <div className="flex flex-wrap gap-2">
+
+                <label className="block text-sm font-medium mb-1">Venue</label>
+
+                <input              <div className="flex gap-2">
+
+                  type="text"
+
+                  value={interviewVenue}  const statusColors = {              <button
+
+                  onChange={(e) => setInterviewVenue(e.target.value)}
+
+                  placeholder="e.g., Room 101, Admin Building"    Pending: 'bg-yellow-100 text-yellow-800 border-yellow-300',                onClick={() => onStatusChange(app.id, 'Approved')}
+
+                  className="w-full border rounded px-3 py-2"
+
+                />    'Interview Scheduled': 'bg-purple-100 text-purple-800 border-purple-300',                disabled={app.status === 'Approved'}
+
+              </div>
+
+            </div>    'Interview Passed': 'bg-blue-100 text-blue-800 border-blue-300',                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-medium"
+
+            <div className="flex gap-2 mt-4">
+
+              <button    'Interview Failed': 'bg-red-100 text-red-800 border-red-300',              >
+
+                onClick={scheduleInterview}
+
+                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"    Approved: 'bg-green-100 text-green-800 border-green-300',                Approve
+
+              >
+
+                Schedule    Rejected: 'bg-red-100 text-red-800 border-red-300',              </button>
+
+              </button>
+
+              <button    Admitted: 'bg-green-100 text-green-800 border-green-300',              <button
+
+                onClick={() => setShowInterviewModal(false)}
+
+                className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"  }                onClick={() => onStatusChange(app.id, 'Rejected')}
+
+              >
+
+                Cancel                  disabled={app.status === 'Rejected'}
+
+              </button>
+
+            </div>  const scheduleInterview = () => {                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-medium"
+
+          </div>
+
+        </div>    if (!interviewDate || !interviewTime || !interviewVenue) {              >
+
+      )}
+
+            alert('Please fill all interview details')                Reject
+
+      {showSeatModal && (
+
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">      return              </button>
+
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+
+            <h3 className="text-lg font-bold mb-4">Assign Seat</h3>    }              <button
+
+            {!app.paymentDone && (
+
+              <div className="bg-red-50 border border-red-200 rounded p-3 mb-4 text-sm text-red-800">                    onClick={() => onStatusChange(app.id, 'Pending')}
+
+                ⚠️ Payment not completed. Seat will be tentative until payment is verified.
+
+              </div>    try {                disabled={app.status === 'Pending'}
+
+            )}
+
+            <div className="space-y-3">      api.publishInterviewList({                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-medium"
+
+              <div>
+
+                <label className="block text-sm font-medium mb-1">Room Number</label>        hallId,              >
+
+                <input
+
+                  type="text"        selectedApplicationIds: [app.id],                Mark Pending
+
+                  value={roomNumber}
+
+                  onChange={(e) => setRoomNumber(e.target.value)}        interviewDate,              </button>
+
+                  placeholder="e.g., 101"
+
+                  className="w-full border rounded px-3 py-2"        interviewTime: interviewTime,            </div>
+
+                />
+
+              </div>        venue: interviewVenue            <div className="flex gap-2 ml-auto">
+
+              <div>
+
+                <label className="block text-sm font-medium mb-1">Seat Number</label>      })              <button
+
+                <input
+
+                  type="text"      alert('Interview scheduled successfully!')                onClick={() => onPaymentChange(app.id, !app.paymentDone)}
+
+                  value={seatNumber}
+
+                  onChange={(e) => setSeatNumber(e.target.value)}      setShowInterviewModal(false)                className={`px-4 py-2 rounded-lg text-sm font-medium ${
+
+                  placeholder="e.g., A1"
+
+                  className="w-full border rounded px-3 py-2"      window.location.reload()                  app.paymentDone
+
+                />
+
+              </div>    } catch (error) {                    ? 'bg-gray-600 text-white hover:bg-gray-700'
+
+              <div className="bg-gray-50 rounded p-3 text-sm">
+
+                <div className="font-medium mb-1">Student Details:</div>      alert('Error scheduling interview: ' + error.message)                    : 'bg-blue-600 text-white hover:bg-blue-700'
+
+                <div>Session: {app.data?.session || 'N/A'}</div>
+
+                <div>Department: {app.data?.department || 'N/A'}</div>    }                }`}
+
+              </div>
+
+            </div>  }              >
+
+            <div className="flex gap-2 mt-4">
+
+              <button                  {app.paymentDone ? 'Mark Unpaid' : 'Mark Paid'}
+
+                onClick={allocateSeat}
+
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"  const allocateSeat = () => {              </button>
+
+              >
+
+                Allocate Seat    if (!roomNumber || !seatNumber) {            </div>
+
+              </button>
+
+              <button      alert('Please enter both room and seat number')          </div>
+
+                onClick={() => setShowSeatModal(false)}
+
+                className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"      return        </div>
+
+              >
+
+                Cancel    }      )}
+
+              </button>
+
+            </div>        </div>
+
+          </div>
+
+        </div>    // Check if payment is done  )
+
+      )}
+
+    </div>    if (!app.paymentDone) {}
+
+  )
+
+}      alert('Payment must be completed before seat allocation')
+
+      return
+    }
+    
+    try {
+      api.allocateSeat({
+        userId: app.userId,
+        hallId,
+        roomNumber,
+        seatNumber,
+        session: app.data?.session || '',
+        department: app.data?.department || ''
+      })
+      alert('Seat allocated successfully!')
+      setShowSeatModal(false)
+      window.location.reload()
+    } catch (error) {
+      alert('Error allocating seat: ' + error.message)
+    }
+  }
+  
+  const addToWaitlist = () => {
+    if (isOnWaitlist) {
+      alert('Student is already on waitlist')
+      return
+    }
+    
+    try {
+      api.addToWaitlist({
+        userId: app.userId,
+        hallId,
+        applicationId: app.id,
+        priority: waitlistEntries.length + 1
+      })
+      alert('Added to waitlist successfully!')
+      window.location.reload()
+    } catch (error) {
+      alert('Error adding to waitlist: ' + error.message)
+    }
+  }
+
+  return (
+    <div className="bg-white border-2 border-gray-300 rounded-lg p-5 hover:shadow-lg transition-shadow">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <h3 className="text-lg font-semibold text-gray-900">{user?.name || 'Unknown Student'}</h3>
+            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColors[app.status] || 'bg-gray-100 text-gray-800 border-gray-300'}`}>
+              {app.status}
+            </span>
+            <span className="px-3 py-1 bg-indigo-600 text-white border border-indigo-700 rounded-full text-xs font-bold">
+              📊 {score} pts
+            </span>
+            {app.paymentDone && (
+              <span className="px-3 py-1 bg-blue-100 text-blue-800 border border-blue-300 rounded-full text-xs font-medium">
+                💳 Paid
+              </span>
+            )}
+            {hasSeat && (
+              <span className="px-3 py-1 bg-green-100 text-green-800 border border-green-300 rounded-full text-xs font-medium">
+                🪑 Seat Assigned
+              </span>
+            )}
+            {isOnWaitlist && (
+              <span className="px-3 py-1 bg-orange-100 text-orange-800 border border-orange-300 rounded-full text-xs font-medium">
+                ⏳ Waitlist
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-1 text-sm text-gray-600">
+            <div>📧 {user?.email || 'N/A'}</div>
+            <div>🆔 {user?.studentId || 'N/A'}</div>
+            <div>🎓 Session: {app.data?.session || 'N/A'}</div>
+            <div>🏛️ Department: {app.data?.department || 'N/A'}</div>
+            <div className="md:col-span-2">📝 Form: {form?.title || form?.name || 'Unknown'} • 📅 {new Date(app.createdAt).toLocaleString()}</div>
+          </div>
+        </div>
+        <button
+          onClick={onToggle}
+          className="text-blue-600 hover:text-blue-700 text-sm font-medium ml-4 whitespace-nowrap"
+        >
+          {isExpanded ? '▲ Hide' : '▼ View Full'}
+        </button>
+      </div>
+
+      {isExpanded && (
+        <div className="border-t pt-4 mt-4 space-y-4">
+          {/* Full Application Details */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              📋 Complete Application Details
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {form?.schema?.map(field => {
+                const value = app.data?.[field.id]
+                const file = app.attachments?.[field.id]
+                return (
+                  <div key={field.id} className="bg-white rounded border p-3">
+                    <div className="text-xs font-medium text-gray-500 mb-1">{field.label}</div>
+                    <div className="text-sm text-gray-900 font-medium">
+                      {Array.isArray(value) ? value.join(', ') : (value || '—')}
+                    </div>
+                    {field.score > 0 && (
+                      <div className="text-xs text-indigo-600 mt-1">Score: {field.score} pts</div>
+                    )}
+                    {file && (
+                      <div className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                        📎 {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-3 pt-4 border-t">
+            {/* Interview Call */}
+            {app.status !== 'Interview Scheduled' && app.status !== 'Interview Passed' && app.status !== 'Interview Failed' && (
+              <button
+                onClick={() => setShowInterviewModal(true)}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium text-sm flex items-center gap-2"
+              >
+                📞 Call for Interview
+              </button>
+            )}
+            
+            {/* Mark as Selected (After Interview) */}
+            {(app.status === 'Interview Scheduled' || app.status === 'Interview Passed') && (
+              <button
+                onClick={() => onStatusChange(app.id, 'Approved')}
+                disabled={app.status === 'Approved'}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium text-sm flex items-center gap-2"
+              >
+                ✅ Mark Selected
+              </button>
+            )}
+            
+            {/* Mark as Not Selected */}
+            {app.status === 'Interview Scheduled' && (
+              <button
+                onClick={() => onStatusChange(app.id, 'Interview Failed')}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-sm flex items-center gap-2"
+              >
+                ❌ Not Selected
+              </button>
+            )}
+            
+            {/* Assign Seat */}
+            {(app.status === 'Approved' || app.status === 'Interview Passed') && !hasSeat && (
+              <button
+                onClick={() => setShowSeatModal(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm flex items-center gap-2"
+              >
+                🪑 Assign Seat
+              </button>
+            )}
+            
+            {/* Add to Waitlist */}
+            {!hasSeat && !isOnWaitlist && app.status !== 'Rejected' && app.status !== 'Interview Failed' && (
+              <button
+                onClick={addToWaitlist}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium text-sm flex items-center gap-2"
+              >
+                ⏳ Add to Waitlist
+              </button>
+            )}
+            
+            {/* Payment Toggle */}
+            <button
+              onClick={() => onPaymentChange(app.id, !app.paymentDone)}
+              className={`px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 ${
+                app.paymentDone
+                  ? 'bg-gray-600 text-white hover:bg-gray-700'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              {app.paymentDone ? '💳 Mark Unpaid' : '💰 Mark Paid'}
+            </button>
+            
+            {/* Reject */}
+            {app.status !== 'Rejected' && (
+              <button
+                onClick={() => onStatusChange(app.id, 'Rejected')}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-sm flex items-center gap-2"
+              >
+                🚫 Reject
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      
+      {/* Interview Modal */}
+      {showInterviewModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-bold mb-4">Schedule Interview</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">Interview Date</label>
+                <input
+                  type="date"
+                  value={interviewDate}
+                  onChange={(e) => setInterviewDate(e.target.value)}
+                  className="w-full border rounded px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Interview Time</label>
+                <input
+                  type="time"
+                  value={interviewTime}
+                  onChange={(e) => setInterviewTime(e.target.value)}
+                  className="w-full border rounded px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Venue</label>
+                <input
+                  type="text"
+                  value={interviewVenue}
+                  onChange={(e) => setInterviewVenue(e.target.value)}
+                  placeholder="e.g., Room 101, Admin Building"
+                  className="w-full border rounded px-3 py-2"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={scheduleInterview}
+                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+              >
+                Schedule
+              </button>
+              <button
+                onClick={() => setShowInterviewModal(false)}
+                className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Seat Assignment Modal */}
+      {showSeatModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-bold mb-4">Assign Seat</h3>
+            {!app.paymentDone && (
+              <div className="bg-red-50 border border-red-200 rounded p-3 mb-4 text-sm text-red-800">
+                ⚠️ Payment not completed. Seat will be tentative until payment is verified.
+              </div>
+            )}
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">Room Number</label>
+                <input
+                  type="text"
+                  value={roomNumber}
+                  onChange={(e) => setRoomNumber(e.target.value)}
+                  placeholder="e.g., 101"
+                  className="w-full border rounded px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Seat Number</label>
+                <input
+                  type="text"
+                  value={seatNumber}
+                  onChange={(e) => setSeatNumber(e.target.value)}
+                  placeholder="e.g., A1"
+                  className="w-full border rounded px-3 py-2"
+                />
+              </div>
+              <div className="bg-gray-50 rounded p-3 text-sm">
+                <div className="font-medium mb-1">Student Details:</div>
+                <div>Session: {app.data?.session || 'N/A'}</div>
+                <div>Department: {app.data?.department || 'N/A'}</div>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={allocateSeat}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Allocate Seat
+              </button>
+              <button
+                onClick={() => setShowSeatModal(false)}
+                className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
