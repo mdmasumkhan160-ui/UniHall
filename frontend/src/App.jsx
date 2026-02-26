@@ -980,7 +980,8 @@ function Home() {
             *****NSTU Halls of Residence*****
           </h1>
           <p className="text-lg md:text-xl text-white drop-shadow-md mb-8 max-w-2xl">
-            Apply for halls online at Noakhali Science and Technology University
+            Apply for halls online at Noakhali Science and Technology
+            University$&&&&
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Link
